@@ -1,0 +1,65 @@
+pyspark 2.	Write a function that expects a transactions dataset as input and returns it with an additional column "level". The value of "level " is calculated based on the "amount" column as:
+•	Top 25% of all transactions get a value "high".
+•	The next 50% of all transactions get "average".
+•	The rest gets "low".
+
+ChatGPT
+To categorize the transactions based on the "amount" column into the three levels "high", "average", and "low", we can use PySpark's Window and percentile functions.
+
+Here's a possible solution for this:
+
+python
+Copy code
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+def categorize_transactions(transactions):
+    # Define a Window specification to order by amount in descending order
+    windowSpec = Window.orderBy(F.desc("amount"))
+
+    # Calculate the percentiles for each transaction amount
+    transactions_with_percentile = transactions.withColumn(
+        "percentile",
+        F.percent_rank().over(windowSpec)
+    )
+
+    # Determine the "level" for each transaction based on its percentile
+    categorized_transactions = transactions_with_percentile.withColumn(
+        "level",
+        F.when(F.col("percentile") <= 0.25, "high")
+        .when((F.col("percentile") > 0.25) & (F.col("percentile") <= 0.75), "average")
+        .otherwise("low")
+    ).drop("percentile") # Drop the percentile column since it's not needed in the final output
+
+    return categorized_transactions
+
+# Sample usage
+if __name__ == "__main__":
+    spark = SparkSession.builder \
+        .appName("Transaction Categorizer") \
+        .getOrCreate()
+
+    # Sample data
+    data = [
+        (1, 1000),
+        (2, 1500),
+        (3, 2000),
+        (4, 500),
+        (5, 2500),
+        (6, 1200),
+        (7, 2200)
+    ]
+
+    columns = ["transaction_id", "amount"]
+
+    transactions = spark.createDataFrame(data, columns)
+
+    result = categorize_transactions(transactions)
+    result.show()
+
+spark.stop()
+This solution first calculates the rank-based percentile of each transaction based on its amount. After that, it determines the "level" column using conditional when functions. Adjust this code as per your dataset and requirements.
+
+
+
