@@ -1,0 +1,46 @@
+pyspark code to create data frame base on sql query, table is dataframe 
+
+ChatGPT
+Certainly! If you have a DataFrame in PySpark and you'd like to create a new DataFrame based on an SQL query, you'll first need to register your DataFrame as a temporary SQL view and then use Spark's SQL context to run your query.
+
+Here's how you can do it:
+
+Start with setting up your PySpark environment:
+python
+Copy code
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("SQL Query on DataFrame") \
+    .getOrCreate()
+Create a sample DataFrame:
+python
+Copy code
+data = [("John", 28, "Male"), ("Amy", 24, "Female"), ("Mike", 30, "Male")]
+columns = ["Name", "Age", "Gender"]
+
+df = spark.createDataFrame(data, schema=columns)
+Register the DataFrame as a temporary SQL view:
+python
+Copy code
+df.createOrReplaceTempView("people")
+Now you can use SQL queries to generate new DataFrames:
+python
+Copy code
+result_df = spark.sql("SELECT Name, Age FROM people WHERE Gender = 'Male'")
+
+result_df.show()
+This will produce:
+
+diff
+Copy code
++-----+---+
+| Name|Age|
++-----+---+
+| John| 28|
+| Mike| 30|
++-----+---+
+You can modify the SQL query in the spark.sql() function to whatever SQL statement you'd like to use.
+
+
+
